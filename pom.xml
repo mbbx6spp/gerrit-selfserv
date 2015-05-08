@@ -1,0 +1,122 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.lookout.gerrit.selfserv</groupId>
+  <artifactId>selfserv</artifactId>
+  <packaging>jar</packaging>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>selfserv</name>
+
+  <properties>
+    <Gerrit-ApiType>plugin</Gerrit-ApiType>
+    <Gerrit-ApiVersion>2.11</Gerrit-ApiVersion>
+    <powermock.version>1.6.2</powermock.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Gerrit-PluginName>selfserv</Gerrit-PluginName>
+              <Gerrit-Module>com.lookout.gerrit.selfserv.Module</Gerrit-Module>
+              <Gerrit-SshModule>com.lookout.gerrit.selfserv.SshModule</Gerrit-SshModule>
+              <Gerrit-HttpModule>com.lookout.gerrit.selfserv.HttpModule</Gerrit-HttpModule>
+              <!--
+              <Gerrit-InitStep>com.lookout.gerrit.selfserv.InitStep</Gerrit-InitStep>
+              -->
+
+              <Implementation-Vendor>Lookout</Implementation-Vendor>
+              <Implementation-URL>http://github.com/lookout</Implementation-URL>
+
+              <Implementation-Title>${Gerrit-ApiType} ${project.artifactId}</Implementation-Title>
+              <Implementation-Version>${project.version}</Implementation-Version>
+
+              <Gerrit-ApiType>${Gerrit-ApiType}</Gerrit-ApiType>
+              <Gerrit-ApiVersion>${Gerrit-ApiVersion}</Gerrit-ApiVersion>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.1</version>
+        <configuration>
+          <effort>Max</effort>
+          <threshold>Low</threshold>
+          <xmlOutput>true</xmlOutput>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.gerrit</groupId>
+      <artifactId>gerrit-${Gerrit-ApiType}-api</artifactId>
+      <version>${Gerrit-ApiVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>findbugs-maven-plugin</artifactId>
+      <version>3.0.1</version>
+      <type>maven-plugin</type>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>2.0.7-beta</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
