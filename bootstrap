@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+  >&2 echo "Error: Sourced an executable file ${BASH_SOURCE[0]}."
+else
+  declare -r work_dir="${1:-/tmp}"
+  declare -r plugin_dir="${PWD}"
+  declare -r gerrit_version="2.11"
+  declare -r plugin_name="${2:-selfserv}"
+  declare -r plugin_version="0.1.0"
+  declare -r gerrit_repo_url="https://gerrit.googlesource.com/gerrit"
+  declare -r gerrit_site="${work_dir}/gerrit-site"
+  declare -r gerrit_war_url="gerrit-releases.storage.googleapis.com/gerrit-${gerrit_version}.war"
+  declare -r gerrit_war_file="${gerrit_site}/gerrit-${gerrit_version}.war"
+  declare -i gerrit_ssh_port=29418
+  declare -r gerrit_ssh_key="${HOME}/.ssh/gerrit2.id_rsa"
+  declare -r gerrit_pub_key="${HOME}/.ssh/gerrit2.id_rsa.pub"
+
+  mkdir -p "${work_dir}"
+
+  echo "Setting up local Gerrit site dev env in ${gerrit_site}"
+  if [ ! -f "${gerrit_war_file}" ]; then
+    mkdir -p "${gerrit_site}"
+    pushd "${gerrit_site}"
+    echo "Downloading v${gerrit_version} gerrit.war..."
+    wget -q "${gerrit_war_url}" -O "${gerrit_war_file}"
+    java -jar "${gerrit_war_file}" init --batch -d "${gerrit_site}"
+    java -jar "${gerrit_war_file}" reindex -d "${gerrit_site}"
+    git config -f "etc/gerrit.config" --null gerrit.canonicalWebUrl
+    git config -f "etc/gerrit.config" gerrit.canonicalWebUrl http://localhost:8080/
+    git config -f "etc/gerrit.config" --null auth.type
+    # Only for development purposes, don't ever do this on a real Gerrit server
+    git config -f "etc/gerrit.config" auth.type DEVELOPMENT_BECOME_ANY_ACCOUNT
+    popd
+  fi
+
+  set -eu
+  if [ ! -d "${work_dir}/gerrit" ]; then
+    git clone --branch "v${gerrit_version}" \
+      "${gerrit_repo_url}" \
+      "${work_dir}/gerrit"
+  fi
+
+  pushd "${plugin_dir}"
+  mvn package
+  cp "target/${plugin_name}-${plugin_version}-SNAPSHOT.jar" "${gerrit_site}/plugins"
+  popd
+
+  pushd "${gerrit_site}"
+  ./bin/gerrit.sh start
+  popd
+
+  if [ ! -f "${gerrit_ssh_key}" ]; then
+    echo -n "No ${gerrit_ssh_key} so generating one for dev env..."
+    ssh-keygen -q -b 2048 -t rsa \
+      -C "Key pair for local gerrit plugin development" \
+      -f "${gerrit_ssh_key}"
+    echo "DONE."
+  else
+    echo "Using ${gerrit_ssh_key} for dev env"
+  fi
+
+  echo
+  echo "~~~~~~~~~~~~"
+  echo "INSTRUCTIONS"
+  echo "~~~~~~~~~~~~"
+  echo "Add an entry to your ${HOME}/.ssh/config file for your development gerrit"
+  echo "Maybe something like this:"
+  echo
+  echo "Host gerrit.dev"
+  echo "  Hostname localhost"
+  echo "  Port 29418"
+  echo "  User ${USER}"
+  echo "  IdentityFile ${gerrit_ssh_key}"
+  echo
+  echo "Now:"
+  echo "1. register a new user account ${USER} at: http://localhost:8080/#/register"
+  echo "2. Upload your SSH public key at ${gerrit_pub_key}"
+  echo "3. Run: ssh -p ${gerrit_ssh_port} localhost -- gerrit plugin ls"
+fi
